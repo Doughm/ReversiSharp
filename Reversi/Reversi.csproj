@@ -46,12 +46,17 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="sfmlnet-graphics-2">
-      <HintPath>..\..\..\libraries\SFML\Dot Net\SFML.Net-2.1-32bits\SFML.Net-2.1\lib\sfmlnet-graphics-2.dll</HintPath>
+      <HintPath>SFML\lib\sfmlnet-graphics-2.dll</HintPath>
     </Reference>
     <Reference Include="sfmlnet-window-2">
-      <HintPath>..\..\..\libraries\SFML\Dot Net\SFML.Net-2.1-32bits\SFML.Net-2.1\lib\sfmlnet-window-2.dll</HintPath>
+      <HintPath>SFML\lib\sfmlnet-window-2.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Game\engine.cs" />
+    <Compile Include="Game\game.cs" />
+    <Compile Include="Game\main.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="csfml-graphics-2.dll">
@@ -63,11 +68,6 @@
     <Content Include="libsndfile-1.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Game\engine.cs" />
-    <Compile Include="Game\game.cs" />
-    <Compile Include="Game\main.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
