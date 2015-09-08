@@ -1,9 +1,13 @@
 ﻿using System;
+using SFML.Window;
+using SFML.Graphics;
 
 namespace Reversi
 {
     class Game
     {
+        private Window window;
+
         private string messageGameOut = string.Empty;
         private string tempStr = string.Empty;
         private Char[,] pieces = new Char[8,8];
@@ -11,14 +15,28 @@ namespace Reversi
         private int piecesBlack = 0;
         private int piecesWhite = 0;
 
-        public Game()
+        public float gameSpeed { get; private set; }
+
+        public Game(Window passedWindow)
         {
-            //sets starting positions
+            window = passedWindow;
+            gameSpeed = 30;
             resetBoard();
         }
 
+        //sets up the board on screen
+        public void setupBoard()
+        {
+            for (int i = 0; i < 64; i++)
+            {
+                window.moveEntity("square" + (i + 1), new Vector2f((i % 8) * 60 + 1, (i / 8) * 60 + 1));
+                window.moveEntity("piece" + (i + 1), new Vector2f((i % 8) * 60 + 5, (i / 8) * 60 + 5));
+                window.makeInvisible("piece" + (i + 1));
+            }
+        }
+
         //resets the board to starting positions
-        public void resetBoard()
+        private void resetBoard()
         {
             turn = "Black";
             piecesBlack = 2;
@@ -41,7 +59,7 @@ namespace Reversi
         }
 
         //adds a piece onto the board if it is a legal move
-        public void placePiece(int index)
+        private void placePiece(int index)
         {
             if (index < 0)
             {
@@ -62,7 +80,7 @@ namespace Reversi
         }
         
         //returns if a piece has been placed
-        public bool getPlaced(int index)
+        private bool getPlaced(int index)
         {
             if (pieces[(index % 8), (index / 8)] == 'o')
             {
@@ -73,7 +91,7 @@ namespace Reversi
         }
         
         //returns the color of a piece
-        public string getColor(int index)
+        private string getColor(int index)
         {
             if (pieces[(index % 8), (index / 8)] == 'B')
             {
@@ -84,18 +102,6 @@ namespace Reversi
                 return "White";
             }
             return "empty";
-        }
-
-        //returns the number of black pieces on the board
-        public int getPiecesBlack()
-        {
-            return piecesBlack;
-        }
-
-        //returns the number of black pieces on the board
-        public int getPiecesWhite()
-        {
-            return piecesWhite;
         }
 
         //updates the number of pieces on the board
@@ -120,7 +126,7 @@ namespace Reversi
         }
 
         //changes the turn from player to player
-        public void switchTurn()
+        private void switchTurn()
         {
             if (turn == "Black")
             {
@@ -131,48 +137,42 @@ namespace Reversi
                 turn = "Black";
             }
         }
-
-        //returns the players turn
-        public string getTurn()
-        {
-            return turn;
-        }
-
+        
         //changes a line of pieces if they are sandwitched
         //if they can't be sandwitched returns nothing
         private bool lineChange(int indexX, int indexY)
         {
             tempStr = string.Empty;
             
-            if (isSandwitched("Right", indexX, indexY))
+            if (isSandwitchedRight(indexX, indexY))
             {
                 tempStr += "Right";
             }
-            if (isSandwitched("Left", indexX, indexY))
+            if (isSandwitchedLeft(indexX, indexY))
             {
                 tempStr += "Left";
             }
-            if (isSandwitched("Down", indexX, indexY))
+            if (isSandwitchedDown(indexX, indexY))
             {
                 tempStr += "Down";
             }
-            if (isSandwitched("Up", indexX, indexY))
+            if (isSandwitchedUp(indexX, indexY))
             {
                 tempStr += "Up";
             }
-            if (isSandwitched("DownRight", indexX, indexY))
+            if (isSandwitchedDownRight(indexX, indexY))
             {
                 tempStr += "DR";
             }
-            if (isSandwitched("DownLeft", indexX, indexY))
+            if (isSandwitchedDownLeft(indexX, indexY))
             {
                 tempStr += "DL";
             }
-            if (isSandwitched("UpLeft", indexX, indexY))
+            if (isSandwitchedUpLeft(indexX, indexY))
             {
                 tempStr += "UL";
             }
-            if (isSandwitched("UpRight", indexX, indexY))
+            if (isSandwitchedUpRight(indexX, indexY))
             {
                 tempStr += "UR";
             }
@@ -182,35 +182,35 @@ namespace Reversi
             }
             if (tempStr.Contains("Right"))
             {
-                swapPieces("Right", indexX, indexY);
+                swapPiecesRight(indexX, indexY);
             }
             if (tempStr.Contains("Left"))
             {
-                swapPieces("Left", indexX, indexY);
+                swapPiecesLeft(indexX, indexY);
             }
             if (tempStr.Contains("Down"))
             {
-                swapPieces("Down", indexX, indexY);
+                swapPiecesDown(indexX, indexY);
             }
             if (tempStr.Contains("Up"))
             {
-                swapPieces("Up", indexX, indexY);
+                swapPiecesUp(indexX, indexY);
             }
             if (tempStr.Contains("DR"))
             {
-                swapPieces("DownRight", indexX, indexY);
+                swapPiecesDownRight(indexX, indexY);
             }
             if (tempStr.Contains("DL"))
             {
-                swapPieces("DownLeft", indexX, indexY);
+                swapPiecesDownLeft(indexX, indexY);
             }
             if (tempStr.Contains("UL"))
             {
-                swapPieces("UpLeft", indexX, indexY);
+                swapPiecesUpLeft(indexX, indexY);
             }
             if (tempStr.Contains("UR"))
             {
-                swapPieces("UpRight", indexX, indexY);
+                swapPiecesUpRight(indexX, indexY);
             }
 
             updatePieceAmount();
@@ -218,459 +218,484 @@ namespace Reversi
             return true;
         }
 
-        //finds if a there is a sandwitch in a given direction
-        public bool isSandwitched(string direction,int indexX, int indexY)
+        //finds if a there is a sandwitch to the right
+        private bool isSandwitchedRight(int indexX, int indexY)
         {
-            switch (direction)
+            if (indexX + 1 < 8)
             {
-            case "Right":
-                if (indexX + 1 < 8)
+                if (pieces[indexX + 1, indexY] == 'o' ||
+                    (pieces[indexX + 1, indexY] == 'W' && turn == "White") ||
+                    (pieces[indexX + 1, indexY] == 'B' && turn == "Black"))
                 {
-                    if (pieces[indexX + 1, indexY] == 'o' ||
-                        (pieces[indexX + 1, indexY] == 'W' && turn == "White") ||
-                        (pieces[indexX + 1, indexY] == 'B' && turn == "Black"))
+                    return false;
+                }
+            }
+            for (int i = 2; i < 8; i++)
+            {
+                if (indexX + i < 8)
+                {
+                    if (pieces[indexX + i, indexY] == 'o')
                     {
                         break;
                     }
-                }
-                for (int i = 2; i < 8; i++)
-                {
-                    if (indexX + i < 8)
+                    else if (pieces[indexX + i, indexY] == 'B' && turn == "Black")
                     {
-                        if(pieces[indexX + i, indexY] == 'o')
-                        {
-                            break;
-                        }
-                        else if (pieces[indexX + i, indexY] == 'B' && turn == "Black")
-                        {
-                            return true;
-                        }
-                        else if (pieces[indexX + i, indexY] == 'W' && turn == "White")
-                        {
-                            return true;
-                        }
+                        return true;
+                    }
+                    else if (pieces[indexX + i, indexY] == 'W' && turn == "White")
+                    {
+                        return true;
                     }
                 }
-                break;
-
-            case "Left":
-                if (indexX - 1 >= 0)
-                {
-                    if (pieces[indexX - 1, indexY] == 'o' ||
-                        (pieces[indexX - 1, indexY] == 'W' && turn == "White") ||
-                        (pieces[indexX - 1, indexY] == 'B' && turn == "Black"))
-                    {
-                        break;
-                    }
-                }
-                for (int i = 2; i < 8; i++)
-                {
-                    if (indexX - i >= 0)
-                    {
-                        if (pieces[indexX - i, indexY] == 'o')
-                        {
-                            break;
-                        }
-                        else if (pieces[indexX + (i * -1), indexY] == 'B' && turn == "Black")
-                        {
-                            return true;
-                        }
-                        else if (pieces[indexX + (i * -1), indexY] == 'W' && turn == "White")
-                        {
-                            return true;
-                        }
-                    }
-                }
-                break;
-
-            case "Down":
-                if (indexY + 1 < 8)
-                {
-                    if (pieces[indexX, indexY + 1] == 'o' ||
-                        (pieces[indexX, indexY + 1] == 'W' && turn == "White") ||
-                        (pieces[indexX, indexY + 1] == 'B' && turn == "Black"))
-                    {
-                        break;
-                    }
-                }
-                for (int i = 2; i < 8; i++)
-                {
-                    if (indexY + i < 8)
-                    {
-                        if (pieces[indexX, indexY + i] == 'o')
-                        {
-                            break;
-                        }
-                        else if (pieces[indexX, indexY + i] == 'B' && turn == "Black")
-                        {
-                            return true;
-                        }
-                        else if (pieces[indexX, indexY + i] == 'W' && turn == "White")
-                        {
-                            return true;
-                        }
-                    }
-                }
-                break;
-
-            case "Up":
-                if (indexY - 1 >= 0)
-                {
-                    if (pieces[indexX, indexY - 1] == 'o' ||
-                       (pieces[indexX, indexY - 1] == 'W' && turn == "White") ||
-                       (pieces[indexX, indexY - 1] == 'B' && turn == "Black"))
-                    {
-                        break;
-                    }
-                }
-                for (int i = 2; i < 8; i++)
-                {
-                    if (indexY - i >= 0)
-                    {
-                        if (pieces[indexX, indexY - i] == 'o')
-                        {
-                            break;
-                        }
-                        if (pieces[indexX, indexY + (i * -1)] == 'B' && turn == "Black")
-                        {
-                            return true;
-                        }
-                        else if (pieces[indexX, indexY + (i * -1)] == 'W' && turn == "White")
-                        {
-                            return true;
-                        }
-                    }
-                }
-                break;
-
-            case "DownRight":
-                if (indexX + 1 < 8 && indexY + 1 < 8)
-                {
-                    if (pieces[indexX + 1, indexY + 1] == 'o' ||
-                        (pieces[indexX + 1, indexY + 1] == 'W' && turn == "White") ||
-                        (pieces[indexX + 1, indexY + 1] == 'B' && turn == "Black"))
-                    {
-                        break;
-                    }
-                }
-                for (int i = 2; i < 8; i++)
-                {
-                    if (indexX + i < 8 && indexY + i < 8)
-                    {
-                        if(pieces[indexX + i, indexY + i] == 'o')
-                        {
-                            break;
-                        }
-                        else if (pieces[indexX + i, indexY + i] == 'B' && turn == "Black")
-                        {
-                            return true;
-                        }
-                        else if (pieces[indexX + i, indexY + i] == 'W' && turn == "White")
-                        {
-                            return true;
-                        }
-                    }
-                }
-                break;
-
-            case "DownLeft":
-                if (indexX - 1 >= 0 && indexY + 1 < 8)
-                {
-                    if (pieces[indexX - 1, indexY + 1] == 'o' ||
-                        (pieces[indexX - 1, indexY + 1] == 'W' && turn == "White") ||
-                        (pieces[indexX - 1, indexY + 1] == 'B' && turn == "Black"))
-                    {
-                        break;
-                    }
-                }
-                for (int i = 2; i < 8; i++)
-                {
-                    if (indexX - i >= 0 && indexY + i < 8)
-                    {
-                        if(pieces[indexX - i, indexY + i] == 'o')
-                        {
-                            break;
-                        }
-                        else if (pieces[indexX - i, indexY + i] == 'B' && turn == "Black")
-                        {
-                            return true;
-                        }
-                        else if (pieces[indexX - i, indexY + i] == 'W' && turn == "White")
-                        {
-                            return true;
-                        }
-                    }
-                }
-                break;
-
-            case "UpLeft":
-                if (indexX - 1 >= 0 && indexY - 1 >= 0)
-                {
-                    if (pieces[indexX - 1, indexY - 1] == 'o' ||
-                        (pieces[indexX - 1, indexY - 1] == 'W' && turn == "White") ||
-                        (pieces[indexX - 1, indexY - 1] == 'B' && turn == "Black"))
-                    {
-                        break;
-                    }
-                }
-                for (int i = 2; i < 8; i++)
-                {
-                    if (indexX - i >= 0 && indexY - i >= 0)
-                    {
-                        if(pieces[indexX - i, indexY - i] == 'o')
-                        {
-                            break;
-                        }
-                        else if (pieces[indexX - i, indexY - i] == 'B' && turn == "Black")
-                        {
-                            return true;
-                        }
-                        else if (pieces[indexX - i, indexY - i] == 'W' && turn == "White")
-                        {
-                            return true;
-                        }
-                    }
-                }
-                break;
-
-            case "UpRight":
-                if (indexX + 1 < 8 && indexY - 1 >= 0)
-                {
-                    if (pieces[indexX + 1, indexY - 1] == 'o' ||
-                        (pieces[indexX + 1, indexY - 1] == 'W' && turn == "White") ||
-                        (pieces[indexX + 1, indexY - 1] == 'B' && turn == "Black"))
-                    {
-                        break;
-                    }
-                }
-                for (int i = 2; i < 8; i++)
-                {
-                    if (indexX + i < 8 && indexY - i >= 0)
-                    {
-                        if(pieces[indexX + i, indexY - i] == 'o')
-                        {
-                            break;
-                        }
-                        else if (pieces[indexX + i, indexY - i] == 'B' && turn == "Black")
-                        {
-                            return true;
-                        }
-                        else if (pieces[indexX + i, indexY - i] == 'W' && turn == "White")
-                        {
-                            return true;
-                        }
-                    }
-                }
-                break;
             }
             return false;
         }
 
-        //changes a sandwitched set of colors two their opposite in a given direction
-        public void swapPieces(string direction, int indexX, int indexY)
+        //finds if a there is a sandwitch to the left
+        private bool isSandwitchedLeft(int indexX, int indexY)
         {
-            switch (direction)
+            if (indexX - 1 >= 0)
             {
-                case "Right":
-                    for (int i = 1; i < 8; i++)
+                if (pieces[indexX - 1, indexY] == 'o' ||
+                    (pieces[indexX - 1, indexY] == 'W' && turn == "White") ||
+                    (pieces[indexX - 1, indexY] == 'B' && turn == "Black"))
+                {
+                    return false;
+                }
+            }
+            for (int i = 2; i < 8; i++)
+            {
+                if (indexX - i >= 0)
+                {
+                    if (pieces[indexX - i, indexY] == 'o')
                     {
-                        if (indexX + i < 8)
-                        {
-                            if (turn == "Black" && pieces[indexX + i, indexY] == 'W')
-                            {
-                                pieces[indexX + i, indexY] = 'B';
-                            }
-                            else if (turn == "White" && pieces[indexX + i, indexY] == 'B')
-                            {
-                                pieces[indexX + i, indexY] = 'W';
-                            }
-                            else if (turn == "Black" && pieces[indexX + i, indexY] == 'B')
-                            {
-                                break;
-                            }
-                            else if (turn == "White" && pieces[indexX + i, indexY] == 'W')
-                            {
-                                break;
-                            }
-                        }
+                        break;
                     }
-                    break;
-
-                case "Left":
-                    for (int i = 1; i < 8; i++)
+                    else if (pieces[indexX + (i * -1), indexY] == 'B' && turn == "Black")
                     {
-                        if (indexX - i >= 0)
-                        {
-                            if (turn == "Black" && pieces[indexX - i, indexY] == 'W')
-                            {
-                                pieces[indexX -i , indexY] = 'B';
-                            }
-                            else if (turn == "White" && pieces[indexX - i, indexY] == 'B')
-                            {
-                                pieces[indexX - i, indexY] = 'W';
-                            }
-                            else if (turn == "Black" && pieces[indexX - i, indexY] == 'B')
-                            {
-                                break;
-                            }
-                            else if (turn == "White" && pieces[indexX - i, indexY] == 'W')
-                            {
-                                break;
-                            }
-                        }
+                        return true;
                     }
-                    break;
-
-                case "Down":
-                    for (int i = 1; i < 8; i++)
+                    else if (pieces[indexX + (i * -1), indexY] == 'W' && turn == "White")
                     {
-                        if (indexY + i < 8)
-                        {
-                            if (turn == "Black" && pieces[indexX, indexY + i] == 'W')
-                            {
-                                pieces[indexX, indexY + i] = 'B';
-                            }
-                            else if (turn == "White" && pieces[indexX, indexY + i] == 'B')
-                            {
-                                pieces[indexX, indexY + i] = 'W';
-                            }
-                            else if (turn == "Black" && pieces[indexX, indexY + i] == 'B')
-                            {
-                                break;
-                            }
-                            else if (turn == "White" && pieces[indexX, indexY + i] == 'W')
-                            {
-                                break;
-                            }
-                        }
+                        return true;
                     }
-                    break;
+                }
+            }
+            return false;
+        }
 
-                case "Up":
-                    for (int i = 1; i < 8; i++)
+        //finds if a there is a sandwitch to down
+        private bool isSandwitchedDown(int indexX, int indexY)
+        {
+            if (indexY + 1 < 8)
+            {
+                if (pieces[indexX, indexY + 1] == 'o' ||
+                    (pieces[indexX, indexY + 1] == 'W' && turn == "White") ||
+                    (pieces[indexX, indexY + 1] == 'B' && turn == "Black"))
+                {
+                    return false;
+                }
+            }
+            for (int i = 2; i < 8; i++)
+            {
+                if (indexY + i < 8)
+                {
+                    if (pieces[indexX, indexY + i] == 'o')
                     {
-                        if (indexY - i >= 0)
-                        {
-                            if (turn == "Black" && pieces[indexX, indexY - i] == 'W')
-                            {
-                                pieces[indexX, indexY - i] = 'B';
-                            }
-                            else if (turn == "White" && pieces[indexX, indexY - i] == 'B')
-                            {
-                                pieces[indexX, indexY - i] = 'W';
-                            }
-                            else if (turn == "Black" && pieces[indexX, indexY - i] == 'B')
-                            {
-                                break;
-                            }
-                            else if (turn == "White" && pieces[indexX, indexY - i] == 'W')
-                            {
-                                break;
-                            }
-                        }
+                        break;
                     }
-                    break;
-
-                case "DownRight":
-                    for (int i = 1; i < 8; i++)
+                    else if (pieces[indexX, indexY + i] == 'B' && turn == "Black")
                     {
-
-                        if (indexX + i < 8 && indexY + i < 8)
-                        {
-                            if (turn == "Black" && pieces[indexX + i, indexY +i] == 'W')
-                            {
-                                pieces[indexX + i, indexY + i] = 'B';
-                            }
-                            else if (turn == "White" && pieces[indexX + i, indexY + i] == 'B')
-                            {
-                                pieces[indexX + i, indexY + i] = 'W';
-                            }
-                            else if (turn == "Black" && pieces[indexX + i, indexY + i] == 'B')
-                            {
-                                break;
-                            }
-                            else if (turn == "White" && pieces[indexX + i, indexY + i] == 'W')
-                            {
-                                break;
-                            }
-                        }
+                        return true;
                     }
-                    break;
-
-                case "DownLeft":
-                    for (int i = 1; i < 8; i++)
+                    else if (pieces[indexX, indexY + i] == 'W' && turn == "White")
                     {
-                        if (indexX - i >= 0 && indexY + i < 8)
-                        {
-                            if (turn == "Black" && pieces[indexX - i, indexY + i] == 'W')
-                            {
-                                pieces[indexX - i, indexY + i] = 'B';
-                            }
-                            else if (turn == "White" && pieces[indexX - i, indexY + i] == 'B')
-                            {
-                                pieces[indexX - i, indexY + i] = 'W';
-                            }
-                            else if (turn == "Black" && pieces[indexX - i, indexY + i] == 'B')
-                            {
-                                break;
-                            }
-                            else if (turn == "White" && pieces[indexX - i, indexY + i] == 'W')
-                            {
-                                break;
-                            }
-                        }
+                        return true;
                     }
-                    break;
+                }
+            }
+            return false;
+        }
 
-                case "UpLeft":
-                    for (int i = 1; i < 8; i++)
+        //finds if a there is a sandwitch to up
+        private bool isSandwitchedUp(int indexX, int indexY)
+        {
+            if (indexY - 1 >= 0)
+            {
+                if (pieces[indexX, indexY - 1] == 'o' ||
+                   (pieces[indexX, indexY - 1] == 'W' && turn == "White") ||
+                   (pieces[indexX, indexY - 1] == 'B' && turn == "Black"))
+                {
+                    return false;
+                }
+            }
+            for (int i = 2; i < 8; i++)
+            {
+                if (indexY - i >= 0)
+                {
+                    if (pieces[indexX, indexY - i] == 'o')
                     {
-                        if (indexX - i >= 0 && indexY - i >= 0)
-                        {
-                            if (turn == "Black" && pieces[indexX - i, indexY - i] == 'W')
-                            {
-                                pieces[indexX - i, indexY - i] = 'B';
-                            }
-                            else if (turn == "White" && pieces[indexX - i, indexY - i] == 'B')
-                            {
-                                pieces[indexX - i, indexY - i] = 'W';
-                            }
-                            else if (turn == "Black" && pieces[indexX - i, indexY - i] == 'B')
-                            {
-                                break;
-                            }
-                            else if (turn == "White" && pieces[indexX - i, indexY - i] == 'W')
-                            {
-                                break;
-                            }
-                        }
+                        break;
                     }
-                    break;
+                    if (pieces[indexX, indexY + (i * -1)] == 'B' && turn == "Black")
+                    {
+                        return true;
+                    }
+                    else if (pieces[indexX, indexY + (i * -1)] == 'W' && turn == "White")
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
-                case "UpRight":
-                    for (int i = 1; i < 8; i++)
+        //finds if a there is a sandwitch down right
+        private bool isSandwitchedDownRight(int indexX, int indexY)
+        {
+            if (indexX + 1 < 8 && indexY + 1 < 8)
+            {
+                if (pieces[indexX + 1, indexY + 1] == 'o' ||
+                    (pieces[indexX + 1, indexY + 1] == 'W' && turn == "White") ||
+                    (pieces[indexX + 1, indexY + 1] == 'B' && turn == "Black"))
+                {
+                    return false;
+                }
+            }
+            for (int i = 2; i < 8; i++)
+            {
+                if (indexX + i < 8 && indexY + i < 8)
+                {
+                    if (pieces[indexX + i, indexY + i] == 'o')
                     {
-                        if (indexX + i < 8 && indexY - i >= 0)
-                        {
-                            if (turn == "Black" && pieces[indexX + i, indexY - i] == 'W')
-                            {
-                                pieces[indexX + i, indexY - i] = 'B';
-                            }
-                            else if (turn == "White" && pieces[indexX + i, indexY - i] == 'B')
-                            {
-                                pieces[indexX + i, indexY - i] = 'W';
-                            }
-                            else if (turn == "Black" && pieces[indexX + i, indexY - i] == 'B')
-                            {
-                                break;
-                            }
-                            else if (turn == "White" && pieces[indexX + i, indexY - i] == 'W')
-                            {
-                                break;
-                            }
-                        }
+                        break;
                     }
-                    break;
+                    else if (pieces[indexX + i, indexY + i] == 'B' && turn == "Black")
+                    {
+                        return true;
+                    }
+                    else if (pieces[indexX + i, indexY + i] == 'W' && turn == "White")
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        //finds if a there is a sandwitch down left
+        private bool isSandwitchedDownLeft(int indexX, int indexY)
+        {
+            if (indexX - 1 >= 0 && indexY + 1 < 8)
+            {
+                if (pieces[indexX - 1, indexY + 1] == 'o' ||
+                    (pieces[indexX - 1, indexY + 1] == 'W' && turn == "White") ||
+                    (pieces[indexX - 1, indexY + 1] == 'B' && turn == "Black"))
+                {
+                    return false;
+                }
+            }
+            for (int i = 2; i < 8; i++)
+            {
+                if (indexX - i >= 0 && indexY + i < 8)
+                {
+                    if (pieces[indexX - i, indexY + i] == 'o')
+                    {
+                        break;
+                    }
+                    else if (pieces[indexX - i, indexY + i] == 'B' && turn == "Black")
+                    {
+                        return true;
+                    }
+                    else if (pieces[indexX - i, indexY + i] == 'W' && turn == "White")
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        //finds if a there is a sandwitch up left
+        private bool isSandwitchedUpLeft(int indexX, int indexY)
+        {
+            if (indexX - 1 >= 0 && indexY - 1 >= 0)
+            {
+                if (pieces[indexX - 1, indexY - 1] == 'o' ||
+                    (pieces[indexX - 1, indexY - 1] == 'W' && turn == "White") ||
+                    (pieces[indexX - 1, indexY - 1] == 'B' && turn == "Black"))
+                {
+                    return false;
+                }
+            }
+            for (int i = 2; i < 8; i++)
+            {
+                if (indexX - i >= 0 && indexY - i >= 0)
+                {
+                    if (pieces[indexX - i, indexY - i] == 'o')
+                    {
+                        break;
+                    }
+                    else if (pieces[indexX - i, indexY - i] == 'B' && turn == "Black")
+                    {
+                        return true;
+                    }
+                    else if (pieces[indexX - i, indexY - i] == 'W' && turn == "White")
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        //finds if a there is a sandwitch up right
+        private bool isSandwitchedUpRight(int indexX, int indexY)
+        {
+            if (indexX + 1 < 8 && indexY - 1 >= 0)
+            {
+                if (pieces[indexX + 1, indexY - 1] == 'o' ||
+                    (pieces[indexX + 1, indexY - 1] == 'W' && turn == "White") ||
+                    (pieces[indexX + 1, indexY - 1] == 'B' && turn == "Black"))
+                {
+                    return false;
+                }
+            }
+            for (int i = 2; i < 8; i++)
+            {
+                if (indexX + i < 8 && indexY - i >= 0)
+                {
+                    if (pieces[indexX + i, indexY - i] == 'o')
+                    {
+                        break;
+                    }
+                    else if (pieces[indexX + i, indexY - i] == 'B' && turn == "Black")
+                    {
+                        return true;
+                    }
+                    else if (pieces[indexX + i, indexY - i] == 'W' && turn == "White")
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        //changes a sandwitched set of colors two their opposite to the right
+        private void swapPiecesRight(int indexX, int indexY)
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                if (indexX + i < 8)
+                {
+                    if (turn == "Black" && pieces[indexX + i, indexY] == 'W')
+                    {
+                        pieces[indexX + i, indexY] = 'B';
+                    }
+                    else if (turn == "White" && pieces[indexX + i, indexY] == 'B')
+                    {
+                        pieces[indexX + i, indexY] = 'W';
+                    }
+                    else if (turn == "Black" && pieces[indexX + i, indexY] == 'B')
+                    {
+                        break;
+                    }
+                    else if (turn == "White" && pieces[indexX + i, indexY] == 'W')
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        //changes a sandwitched set of colors two their opposite to the left
+        private void swapPiecesLeft(int indexX, int indexY)
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                if (indexX - i >= 0)
+                {
+                    if (turn == "Black" && pieces[indexX - i, indexY] == 'W')
+                    {
+                        pieces[indexX - i, indexY] = 'B';
+                    }
+                    else if (turn == "White" && pieces[indexX - i, indexY] == 'B')
+                    {
+                        pieces[indexX - i, indexY] = 'W';
+                    }
+                    else if (turn == "Black" && pieces[indexX - i, indexY] == 'B')
+                    {
+                        break;
+                    }
+                    else if (turn == "White" && pieces[indexX - i, indexY] == 'W')
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        //changes a sandwitched set of colors two their opposite down
+        private void swapPiecesDown(int indexX, int indexY)
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                if (indexY + i < 8)
+                {
+                    if (turn == "Black" && pieces[indexX, indexY + i] == 'W')
+                    {
+                        pieces[indexX, indexY + i] = 'B';
+                    }
+                    else if (turn == "White" && pieces[indexX, indexY + i] == 'B')
+                    {
+                        pieces[indexX, indexY + i] = 'W';
+                    }
+                    else if (turn == "Black" && pieces[indexX, indexY + i] == 'B')
+                    {
+                        break;
+                    }
+                    else if (turn == "White" && pieces[indexX, indexY + i] == 'W')
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        //changes a sandwitched set of colors two their opposite up
+        private void swapPiecesUp(int indexX, int indexY)
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                if (indexY - i >= 0)
+                {
+                    if (turn == "Black" && pieces[indexX, indexY - i] == 'W')
+                    {
+                        pieces[indexX, indexY - i] = 'B';
+                    }
+                    else if (turn == "White" && pieces[indexX, indexY - i] == 'B')
+                    {
+                        pieces[indexX, indexY - i] = 'W';
+                    }
+                    else if (turn == "Black" && pieces[indexX, indexY - i] == 'B')
+                    {
+                        break;
+                    }
+                    else if (turn == "White" && pieces[indexX, indexY - i] == 'W')
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        //changes a sandwitched set of colors two their opposite down right
+        private void swapPiecesDownRight(int indexX, int indexY)
+        {
+            for (int i = 1; i < 8; i++)
+            {
+
+                if (indexX + i < 8 && indexY + i < 8)
+                {
+                    if (turn == "Black" && pieces[indexX + i, indexY + i] == 'W')
+                    {
+                        pieces[indexX + i, indexY + i] = 'B';
+                    }
+                    else if (turn == "White" && pieces[indexX + i, indexY + i] == 'B')
+                    {
+                        pieces[indexX + i, indexY + i] = 'W';
+                    }
+                    else if (turn == "Black" && pieces[indexX + i, indexY + i] == 'B')
+                    {
+                        break;
+                    }
+                    else if (turn == "White" && pieces[indexX + i, indexY + i] == 'W')
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        //changes a sandwitched set of colors two their opposite down left
+        private void swapPiecesDownLeft(int indexX, int indexY)
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                if (indexX - i >= 0 && indexY + i < 8)
+                {
+                    if (turn == "Black" && pieces[indexX - i, indexY + i] == 'W')
+                    {
+                        pieces[indexX - i, indexY + i] = 'B';
+                    }
+                    else if (turn == "White" && pieces[indexX - i, indexY + i] == 'B')
+                    {
+                        pieces[indexX - i, indexY + i] = 'W';
+                    }
+                    else if (turn == "Black" && pieces[indexX - i, indexY + i] == 'B')
+                    {
+                        break;
+                    }
+                    else if (turn == "White" && pieces[indexX - i, indexY + i] == 'W')
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        //changes a sandwitched set of colors two their opposite up left
+        private void swapPiecesUpLeft(int indexX, int indexY)
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                if (indexX - i >= 0 && indexY - i >= 0)
+                {
+                    if (turn == "Black" && pieces[indexX - i, indexY - i] == 'W')
+                    {
+                        pieces[indexX - i, indexY - i] = 'B';
+                    }
+                    else if (turn == "White" && pieces[indexX - i, indexY - i] == 'B')
+                    {
+                        pieces[indexX - i, indexY - i] = 'W';
+                    }
+                    else if (turn == "Black" && pieces[indexX - i, indexY - i] == 'B')
+                    {
+                        break;
+                    }
+                    else if (turn == "White" && pieces[indexX - i, indexY - i] == 'W')
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        //changes a sandwitched set of colors two their opposite up right
+        private void swapPiecesUpRight(int indexX, int indexY)
+        {
+            for (int i = 1; i < 8; i++)
+            {
+                if (indexX + i < 8 && indexY - i >= 0)
+                {
+                    if (turn == "Black" && pieces[indexX + i, indexY - i] == 'W')
+                    {
+                        pieces[indexX + i, indexY - i] = 'B';
+                    }
+                    else if (turn == "White" && pieces[indexX + i, indexY - i] == 'B')
+                    {
+                        pieces[indexX + i, indexY - i] = 'W';
+                    }
+                    else if (turn == "Black" && pieces[indexX + i, indexY - i] == 'B')
+                    {
+                        break;
+                    }
+                    else if (turn == "White" && pieces[indexX + i, indexY - i] == 'W')
+                    {
+                        break;
+                    }
+                }
             }
         }
 
@@ -681,10 +706,10 @@ namespace Reversi
             {
                 for (int y = 0; y < 8; y++)
                 {
-                    if ((isSandwitched("Right", x, y) || isSandwitched("Left", x, y) ||
-                        isSandwitched("Up", x, y) || isSandwitched("Down", x, y) ||
-                        isSandwitched("DownRight", x, y) ||isSandwitched("DownLeft", x, y) ||
-                        isSandwitched("UpLeft", x, y) || isSandwitched("UpRight", x, y)) &&
+                    if ((isSandwitchedRight(x, y) || isSandwitchedLeft(x, y) ||
+                        isSandwitchedUp(x, y) || isSandwitchedDown(x, y) ||
+                        isSandwitchedDownRight(x, y) || isSandwitchedDownLeft(x, y) ||
+                        isSandwitchedUpLeft(x, y) || isSandwitchedUpRight(x, y)) &&
                         pieces[x,y] == 'o')
                     {
                         return false;
@@ -696,10 +721,10 @@ namespace Reversi
             {
                 for (int y = 0; y < 8; y++)
                 {
-                    if ((isSandwitched("Right", x, y) || isSandwitched("Left", x, y) ||
-                        isSandwitched("Up", x, y) || isSandwitched("Down", x, y) ||
-                        isSandwitched("DownRight", x, y) || isSandwitched("DownLeft", x, y) ||
-                        isSandwitched("UpLeft", x, y) || isSandwitched("UpRight", x, y)) && 
+                    if ((isSandwitchedRight(x, y) || isSandwitchedLeft(x, y) ||
+                        isSandwitchedUp(x, y) || isSandwitchedDown(x, y) ||
+                        isSandwitchedDownRight(x, y) || isSandwitchedDownLeft(x, y) ||
+                        isSandwitchedUpLeft(x, y) || isSandwitchedUpRight(x, y)) && 
                         pieces[x,y] == 'o')
                     {
                         return false;
@@ -707,6 +732,100 @@ namespace Reversi
                 }
             }
             return true;
+        }
+
+        //takes in mouse input for the game
+        public void mouseInputGame()
+        {
+            if (window.inputMouseClick() == "Leftbutton")
+            {
+                tempStr = string.Empty;
+                tempStr = window.batchIsWithin("square", window.mousePositionView());
+                if (tempStr != string.Empty && tempStr.Contains("square"))
+                {
+                    placePiece(window.batchNumber(tempStr) - 1);
+                }
+                else if (window.isWithin("passbutton", window.mousePositionView()))
+                {
+                    switchTurn();
+                }
+                else if (window.isWithin("resetbutton", window.mousePositionView()))
+                {
+                    resetBoard();
+                }
+            }
+        }
+
+        //takes in mouse input for the reset button
+        public void mouseInputReset()
+        {
+            if (window.inputMouseClick() == "Leftbutton")
+            {
+                tempStr = string.Empty;
+                tempStr = window.batchIsWithin("square", window.mousePositionView());
+                if (window.isWithin("resetbutton", window.mousePositionView()))
+                {
+                    resetBoard();
+                }
+            }
+        }
+
+        //sets the marquee if the game is won
+        public void setMarqueeWon()
+        {
+            if (piecesBlack > piecesWhite)
+            {
+                window.setText("turn", "Black Player Wins!");
+                window.setColor("turn", Color.Black);
+            }
+            else if (piecesBlack < piecesWhite)
+            {
+                window.setText("turn", "White Player Wins!");
+                window.setColor("turn", Color.White);
+            }
+        }
+
+        //updates the piece graphics 
+        public void updatePieceGraphics()
+        {
+            for (int i = 0; i < 64; i++)
+            {
+                if (getPlaced(i))
+                {
+                    window.makeVisible("piece" + (i + 1));
+                }
+                if (getColor(i) == "White")
+                {
+                    window.setColor("piece" + (i + 1), Color.White);
+                }
+                else if (getColor(i) == "Black")
+                {
+                    window.setColor("piece" + (i + 1), Color.Black);
+                }
+                else if (getColor(i) == "empty")
+                {
+                    window.makeInvisible("piece" + (i + 1));
+                }
+            }
+        }
+
+        //updates the UI
+        public void updateUI()
+        {
+            //updates the UI
+            window.setText("blackpieces", "Black Pieces " + piecesBlack);
+            window.setText("whitepieces", "White Pieces " + piecesWhite);
+
+            if (turn == "Black")
+            {
+                window.setText("turn", "Black Players Turn");
+                window.setColor("turn", Color.Black);
+            }
+            else if (turn == "White")
+            {
+                window.setText("turn", "White Players Turn");
+                window.setColor("turn", Color.White);
+            }
         }
     }
 }

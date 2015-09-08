@@ -54,7 +54,11 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Game\engine.cs" />
+    <Compile Include="Game\assetloader.cs" />
+    <Compile Include="Game\engine\loadini.cs" />
+    <Compile Include="Game\engine\textedit.cs" />
+    <Compile Include="Game\engine\timer.cs" />
+    <Compile Include="Game\engine\window.cs" />
     <Compile Include="Game\game.cs" />
     <Compile Include="Game\main.cs" />
   </ItemGroup>
